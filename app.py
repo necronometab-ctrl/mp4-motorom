@@ -1,11 +1,16 @@
-
 import os, uuid, subprocess, tempfile
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
 app = FastAPI()
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"], allow_credentials=True)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+    allow_credentials=False
+)
 
 @app.get("/")
 def root():
@@ -23,7 +28,7 @@ async def convert(
     audio_path = os.path.join(tmpdir, "audio" + os.path.splitext(audio.filename)[1])
     with open(audio_path, "wb") as f:
         f.write(await audio.read())
-    
+
     image_path = None
     if image and image.filename:
         image_path = os.path.join(tmpdir, "cover" + os.path.splitext(image.filename)[1])
@@ -49,6 +54,6 @@ async def convert(
             cmd = ["ffmpeg","-y","-f","lavfi","-i",f"color=c={bg_color}:s={W}x{H}:d=10","-i",audio_path,"-c:v","libx264","-c:a","aac","-b:a","192k","-shortest","-movflags","+faststart","-vf","format=yuv420p",output_path]
 
     result = subprocess.run(cmd, capture_output=True, text=True)
-    if result.returncode != 0:
+    if result.returncode!= 0:
         return {"error": result.stderr[-3000:]}
     return FileResponse(output_path, filename="konvertalt.mp4", media_type="video/mp4")
